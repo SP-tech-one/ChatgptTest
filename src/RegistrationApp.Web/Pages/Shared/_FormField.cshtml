@@ -1,0 +1,39 @@
+@model FormFieldDefinition
+@{
+    var wrapperClasses = string.Join(' ', new[] { "form-field", Model.CssClass }.Where(value => !string.IsNullOrWhiteSpace(value)));
+    var labelClasses = "form-label" + (Model.IsRequired ? " required" : string.Empty);
+    var invalidMessage = Model.Type switch
+    {
+        "email" => "ایمیل معتبر وارد کنید.",
+        "tel" => "شماره تماس معتبر وارد کنید.",
+        "date" => "تاریخ معتبر انتخاب کنید.",
+        _ => Model.IsRequired ? $"{Model.Label} را وارد کنید." : "مقدار وارد شده معتبر نیست.",
+    };
+}
+<div class="@wrapperClasses">
+    <label class="@labelClasses" for="@Model.Id">@Model.Label</label>
+    @switch (Model.Type)
+    {
+        case "textarea":
+            <textarea class="form-control" id="@Model.Id" name="@Model.Name" rows="3" placeholder="@Model.Placeholder" @(Model.IsRequired ? "required" : null)></textarea>
+            break;
+        case "select":
+            <select class="form-select" id="@Model.Id" name="@Model.Name" @(Model.IsRequired ? "required" : null)>
+                @foreach (var option in Model.Options)
+                {
+                    <option value="@option.Value">@option.Label</option>
+                }
+            </select>
+            break;
+        default:
+            <input type="@Model.Type" class="form-control" id="@Model.Id" name="@Model.Name" placeholder="@Model.Placeholder" @(Model.IsRequired ? "required" : null) />
+            break;
+    }
+
+    @if (!string.IsNullOrWhiteSpace(Model.HelpText))
+    {
+        <div class="form-text">@Model.HelpText</div>
+    }
+
+    <div class="invalid-feedback">@invalidMessage</div>
+</div>
