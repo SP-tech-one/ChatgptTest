@@ -1,0 +1,111 @@
+@page
+@model IndexModel
+@using System.Text.Json
+@using System.Linq
+@using System.Collections.Generic
+@{
+    ViewData["Title"] = Model.FormDefinition.Title;
+    var section = Model.FormDefinition.Sections.FirstOrDefault();
+
+    List<List<FormFieldDefinition>> BuildRows(FormSectionDefinition? formSection)
+    {
+        var rows = new List<List<FormFieldDefinition>>();
+        if (formSection is null)
+        {
+            return rows;
+        }
+
+        var currentRow = new List<FormFieldDefinition>();
+        var currentSpan = 0;
+
+        foreach (var field in formSection.Fields)
+        {
+            var span = Math.Clamp(field.ColumnSpan, 1, 12);
+            if (currentSpan + span > 12 && currentRow.Count > 0)
+            {
+                rows.Add(currentRow);
+                currentRow = new List<FormFieldDefinition>();
+                currentSpan = 0;
+            }
+
+            currentRow.Add(field);
+            currentSpan += span;
+        }
+
+        if (currentRow.Count > 0)
+        {
+            rows.Add(currentRow);
+        }
+
+        return rows;
+    }
+
+    var rows = BuildRows(section);
+    var jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+}
+
+<div class="row g-4">
+    <div class="col-12 col-lg-5">
+        <section class="form-section">
+            <h2 class="mb-0">@section?.Title</h2>
+            @if (!string.IsNullOrWhiteSpace(section?.Description))
+            {
+                <p class="text-muted mb-4">@section!.Description</p>
+            }
+
+            <form id="registration-form" class="needs-validation" novalidate data-endpoint="@Url.Content("~/api/registrations/validate")">
+                <div id="form-errors" class="alert alert-danger d-none" role="alert"></div>
+                @foreach (var row in rows)
+                {
+                    <div class="row">
+                        @foreach (var field in row)
+                        {
+                            var span = Math.Clamp(field.ColumnSpan, 1, 12);
+                            var columnClass = $"col-12 col-sm-{span}";
+                            <div class="@columnClass">
+                                @await Html.PartialAsync("_FormField", field)
+                            </div>
+                        }
+                    </div>
+                }
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">ذخیره پس از اعتبارسنجی</button>
+                    <button type="button" id="clear-storage" class="btn btn-outline-danger">حذف همه اطلاعات</button>
+                </div>
+            </form>
+        </section>
+    </div>
+
+    <div class="col-12 col-lg-7">
+        <section class="table-container h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="fs-5 mb-0">لیست افراد ذخیره شده</h2>
+                <span id="record-count" class="badge text-bg-secondary">0</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table align-middle" id="records-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">نام و نام خانوادگی</th>
+                            <th scope="col">ایمیل</th>
+                            <th scope="col">شماره تماس</th>
+                            <th scope="col">شهر</th>
+                            <th scope="col">تاریخ ثبت</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <p id="no-records" class="text-center my-4">هیچ اطلاعاتی ذخیره نشده است.</p>
+        </section>
+    </div>
+</div>
+
+@section Scripts {
+    <script id="registration-form-definition" type="application/json">
+        @Html.Raw(JsonSerializer.Serialize(Model.FormDefinition, jsonOptions))
+    </script>
+    <script src="~/js/registration.js" asp-append-version="true"></script>
+}
