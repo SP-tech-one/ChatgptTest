@@ -1,0 +1,16 @@
+@page
+@model ErrorModel
+@{
+    ViewData["Title"] = "خطا";
+}
+
+<h1 class="text-danger">خطایی رخ داده است</h1>
+<p class="text-muted">در صورت تکرار، لطفاً از اطلاعات ثبت شده خروجی بگیرید و با پشتیبانی تماس بگیرید.</p>
+
+@if (Model.ShowRequestId)
+{
+    <p>
+        <strong>کد پیگیری:</strong>
+        <code>@Model.RequestId</code>
+    </p>
+}
